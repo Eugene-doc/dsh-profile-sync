@@ -81,7 +81,7 @@ test('applies packages, bundles and skills', async t => {
   assert.equal(result.installed.length, 2)
   assert.equal(result.skills.added, 1)
   assert.deepEqual(await f.manager.readBundles(), ['base', 'old', 'new', 'local'])
-  assert.match(f.calls.find(c => c[0] === 'add' && c[1].includes('@file:'))[1], /archives[/\\].+\.tgz$/)
+  assert.match(f.calls.find(c => c[0] === 'add' && c[1].startsWith('file:'))[1], /archives[/\\].+\.tgz$/)
 })
 
 test('blocks missing archive before installing anything', async t => {

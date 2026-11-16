@@ -6,6 +6,14 @@ import { test } from 'node:test'
 
 import { loadState, readMachineGuid, saveState } from '../lib/state.js'
 
+test('rejects malformed MachineGuid output on Windows', async () => {
+  if (process.platform !== 'win32') return
+  await assert.rejects(
+    readMachineGuid({ run: async () => ({ stdout: 'no guid here' }) }),
+    /MachineGuid/,
+  )
+})
+
 test('derives a stable device id from machine guid and profile', async t => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'profile-sync-state-'))
   t.after(() => fs.rm(dir, { recursive: true, force: true }))

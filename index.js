@@ -27,11 +27,37 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
+function assertLocalRequest(req) {
+  const headers = req.headers || {}
+  const host = String(headers.host || '')
+  if (!/^(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/i.test(host)) {
+    throw Object.assign(new Error('profile sync only accepts loopback requests'), { status: 403 })
+  }
+  if (headers['sec-fetch-site'] === 'cross-site') {
+    throw Object.assign(new Error('cross-site request rejected'), { status: 403 })
+  }
+  const origin = headers.origin
+  if (origin) {
+    let originHost = ''
+    try {
+      originHost = new URL(origin).host
+    } catch {}
+    if (originHost !== host) throw Object.assign(new Error('origin mismatch'), { status: 403 })
+  }
+  if (req.method !== 'GET' && req.method !== 'HEAD') {
+    const type = String(headers['content-type'] || '')
+    if (!type.toLowerCase().startsWith('application/json')) {
+      throw Object.assign(new Error('mutations require application/json'), { status: 415 })
+    }
+  }
+}
+
 export function createHandler(engine, { restart = scheduleRestart } = {}) {
   return async function handler(req, res) {
     const url = new URL(req.url, 'http://localhost')
     const route = url.pathname.slice(API_PREFIX.length) || '/'
     try {
+      assertLocalRequest(req)
       if (req.method === 'GET' && route === '/status') {
         json(res, 200, await engine.status())
         return
@@ -73,7 +99,7 @@ export function createHandler(engine, { restart = scheduleRestart } = {}) {
       }
       json(res, 404, { ok: false, error: 'unknown profile sync endpoint' })
     } catch (error) {
-      json(res, 500, { ok: false, error: String(error?.message || error) })
+      json(res, Number(error?.status) || 500, { ok: false, error: String(error?.message || error) })
     }
   }
 }

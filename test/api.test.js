@@ -13,11 +13,17 @@ function fakeResponse() {
   }
 }
 
-async function call(handler, method, url, body) {
+async function call(handler, method, url, body, extraHeaders = {}) {
   const res = fakeResponse()
   const req = {
     method,
     url,
+    headers: {
+      host: '127.0.0.1:4310',
+      origin: 'http://127.0.0.1:4310',
+      'content-type': 'application/json',
+      ...extraHeaders,
+    },
     async *[Symbol.asyncIterator]() {
       if (body) yield Buffer.from(JSON.stringify(body))
     },
@@ -34,6 +40,13 @@ test('status route returns device and local inventory', async () => {
   const result = await call(handler, 'GET', '/profile-sync/api/status')
   assert.equal(result.status, 200)
   assert.equal(result.body.device.deviceName, 'home5070')
+})
+
+test('rejects a cross-site mutation', async () => {
+  const engine = { snapshot: async () => ({ ok: true }) }
+  const handler = createHandler(engine)
+  const result = await call(handler, 'POST', '/profile-sync/api/snapshot', {}, { origin: 'https://evil.example' })
+  assert.equal(result.status, 403)
 })
 
 test('apply route requires a device id', async () => {

@@ -23,10 +23,11 @@ test('builds and writes a snapshot with local archives and skills', async t => {
     state,
     dshVersion: '0.2.2-rc.3',
     platform: 'win32',
-    archives: { 'local-plugin': { archive, sha256: 'b'.repeat(64), version: '1.0.0' } },
+    archives: { 'local-plugin': { archive, sha256: 'b'.repeat(64), contentHash: 'c'.repeat(64), version: '1.0.0' } },
   })
   assert.equal(snapshot.plugins.find(p => p.name === 'local-plugin').source, 'local')
   assert.equal(snapshot.plugins.find(p => p.name === 'local-plugin').sha256, 'b'.repeat(64))
+  assert.equal(snapshot.plugins.find(p => p.name === 'local-plugin').contentHash, 'c'.repeat(64))
   await writeSnapshot({
     repoPath: root,
     profileName: 'desktop',

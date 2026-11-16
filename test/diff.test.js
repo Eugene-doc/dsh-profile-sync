@@ -33,6 +33,23 @@ test('classifies plugin changes', () => {
   assert.equal(result.plugins.find(p => p.name === 'local-only').action, 'local-only')
 })
 
+test('compares a local plugin by content hash, not by linked path', () => {
+  const result = diffSnapshot({
+    inventory: { dependencies: { 'dsh-token-budget': 'link:C:/Users/User/...' }, bundles: [] },
+    skills: [],
+    base: { plugins: {}, skills: {} },
+    localArchives: { 'dsh-token-budget': { contentHash: 'a'.repeat(64) } },
+    remote: {
+      snapshot: {
+        dshVersion: '0.2.2-rc.3',
+        plugins: [{ name: 'dsh-token-budget', source: 'local', contentHash: 'a'.repeat(64), sha256: 'b'.repeat(64) }],
+        skills: [],
+      },
+    },
+  })
+  assert.equal(result.plugins[0].action, 'same')
+})
+
 test('reports a skill conflict when both sides changed from base', () => {
   const result = diffSnapshot({
     inventory: { dependencies: {}, bundles: [] },

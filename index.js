@@ -46,9 +46,6 @@ function assertLocalRequest(req) {
     throw Object.assign(new Error('cross-site request rejected'), { status: 403 })
   }
   const origin = headers.origin
-  if (mutation && !origin) {
-    throw Object.assign(new Error('origin is required for mutations'), { status: 403 })
-  }
   if (origin) {
     let originHost = ''
     try {

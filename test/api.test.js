@@ -43,6 +43,13 @@ test('status route returns device and local inventory', async () => {
   assert.equal(result.body.device.deviceName, 'home5070')
 })
 
+test('allows a same-origin mutation without an Origin header', async () => {
+  const engine = { snapshot: async () => ({ ok: true }) }
+  const handler = createHandler(engine)
+  const result = await call(handler, 'POST', '/profile-sync/api/snapshot', {}, { origin: undefined })
+  assert.equal(result.status, 200)
+})
+
 test('rejects a cross-site mutation', async () => {
   const engine = { snapshot: async () => ({ ok: true }) }
   const handler = createHandler(engine)

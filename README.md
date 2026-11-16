@@ -17,7 +17,7 @@
 ## Установка
 
 ```powershell
-dsh plugin --profile desktop add "file:D:\path\to\dsh-profile-sync-0.1.0.tgz"
+dsh plugin --profile desktop add "file:D:\path\to\dsh-profile-sync-0.1.1.tgz"
 ```
 
 После установки перезапустите DSH и откройте **Настройки → Плагины и скиллы**.

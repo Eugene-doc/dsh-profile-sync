@@ -144,6 +144,28 @@ test('rejects a skill whose content does not match its declared hash', async t =
   assert.equal(f.calls.some(c => c[0] === 'add'), false)
 })
 
+test('rolls back when the post-apply state write fails', async t => {
+  const f = await fixture()
+  t.after(() => fs.rm(f.root, { recursive: true, force: true }))
+  const before = await fs.readFile(f.packagePath, 'utf8')
+  await assert.rejects(
+    applySnapshot({
+      snapshot: f.snapshot,
+      snapshotDir: f.deviceDir,
+      inventory: await readProfile({ profileDir: f.profileDir }),
+      packageManager: f.manager,
+      skillsDir: f.skillsDir,
+      backupDir: path.join(f.root, 'backup'),
+      archivesDir: path.join(f.root, 'archives'),
+      localDshVersion: '0.2.2-rc.3',
+      afterApply: async () => { throw new Error('state write failed') },
+    }),
+    /state write failed/,
+  )
+  assert.equal(await fs.readFile(f.packagePath, 'utf8'), before)
+  assert.ok(f.calls.some(c => c[0] === 'lock'))
+})
+
 test('restores files when a package install fails', async t => {
   const f = await fixture({ failOn: '.tgz' })
   t.after(() => fs.rm(f.root, { recursive: true, force: true }))

@@ -27,16 +27,28 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
+function isLoopback(address) {
+  return /^(::1|::ffff:127\.0\.0\.1|127\.0\.0\.1)$/i.test(String(address || ''))
+}
+
 function assertLocalRequest(req) {
   const headers = req.headers || {}
   const host = String(headers.host || '')
   if (!/^(127\.0\.0\.1|localhost|\[::1\])(?::\d+)?$/i.test(host)) {
     throw Object.assign(new Error('profile sync only accepts loopback requests'), { status: 403 })
   }
-  if (headers['sec-fetch-site'] === 'cross-site') {
+  if (!isLoopback(req.socket?.remoteAddress)) {
+    throw Object.assign(new Error('profile sync only accepts loopback connections'), { status: 403 })
+  }
+  const mutation = req.method !== 'GET' && req.method !== 'HEAD'
+  const fetchSite = headers['sec-fetch-site']
+  if (mutation && fetchSite && fetchSite !== 'same-origin') {
     throw Object.assign(new Error('cross-site request rejected'), { status: 403 })
   }
   const origin = headers.origin
+  if (mutation && !origin) {
+    throw Object.assign(new Error('origin is required for mutations'), { status: 403 })
+  }
   if (origin) {
     let originHost = ''
     try {
@@ -44,7 +56,7 @@ function assertLocalRequest(req) {
     } catch {}
     if (originHost !== host) throw Object.assign(new Error('origin mismatch'), { status: 403 })
   }
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
+  if (mutation) {
     const type = String(headers['content-type'] || '')
     if (!type.toLowerCase().startsWith('application/json')) {
       throw Object.assign(new Error('mutations require application/json'), { status: 415 })

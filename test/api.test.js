@@ -18,6 +18,7 @@ async function call(handler, method, url, body, extraHeaders = {}) {
   const req = {
     method,
     url,
+    socket: { remoteAddress: '127.0.0.1' },
     headers: {
       host: '127.0.0.1:4310',
       origin: 'http://127.0.0.1:4310',

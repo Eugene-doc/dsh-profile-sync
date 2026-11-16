@@ -24,6 +24,17 @@ test('reads only top-level markdown skills', async t => {
   assert.equal(skills[0].sha256.length, 64)
 })
 
+test('normalizes CRLF when hashing and reading a skill', async t => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'profile-sync-skills-crlf-'))
+  t.after(() => fs.rm(root, { recursive: true, force: true }))
+  const skillsDir = path.join(root, 'skills')
+  await fs.mkdir(skillsDir)
+  await fs.writeFile(path.join(skillsDir, 'win.md'), 'a\r\nb\r\n', 'utf8')
+  const [skill] = await readSkills({ skillsDir, includeContent: true })
+  assert.equal(skill.sha256, sha('a\nb\n'))
+  assert.equal(skill.content, 'a\nb\n')
+})
+
 test('adds a remote skill and backs up an overwritten local skill', async t => {
   const { root, skillsDir } = await fixture()
   t.after(() => fs.rm(root, { recursive: true, force: true }))

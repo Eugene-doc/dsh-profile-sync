@@ -115,6 +115,7 @@ window.__ModuleLoader__.load({
         }
       }
 
+      const otherDevices = devices.filter(device => !device.current)
       const card = {
         border: '1px solid var(--dsw-alias-separator)',
         borderRadius: '12px',
@@ -165,14 +166,19 @@ window.__ModuleLoader__.load({
         ) : null,
         h('div', { style: card },
           h('h2', { style: { margin: 0, fontSize: '16px' } }, 'Снимки других компьютеров'),
-          devices.length === 0 ? h('p', { style: { opacity: 0.7, fontSize: '13px' } }, 'Пока нет снимков. Нажмите «Синхронизировать» на этом ПК.') : null,
+          otherDevices.length === 0
+            ? h('p', { style: { opacity: 0.7, fontSize: '13px' } },
+              devices.length === 0
+                ? 'Пока нет снимков. Нажмите «Синхронизировать» на этом ПК.'
+                : 'Снимок этого ПК создан. Снимков других компьютеров пока нет.')
+            : null,
           h('select', {
             value: selected,
             onChange: event => choose(event.target.value),
             style: { ...button, width: '100%', marginTop: '10px' },
           },
             h('option', { value: '' }, 'Выберите устройство'),
-            devices.filter(device => !device.current).map(device =>
+            otherDevices.map(device =>
               h('option', { key: device.deviceId, value: device.deviceId },
                 `${device.deviceName} · ${device.plugins} плагинов · ${device.skills} скиллов`),
             ),

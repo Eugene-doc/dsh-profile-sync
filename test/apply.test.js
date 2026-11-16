@@ -81,7 +81,7 @@ test('applies packages, bundles and skills', async t => {
   assert.equal(result.installed.length, 2)
   assert.equal(result.skills.added, 1)
   assert.deepEqual(await f.manager.readBundles(), ['base', 'old', 'new', 'local'])
-  assert.match(f.calls.find(c => c[0] === 'add' && c[1].startsWith('file:'))[1], /archives[/\\].+\.tgz$/)
+  assert.match(f.calls.find(c => c[0] === 'add' && c[1].includes('@file:'))[1], /archives[/\\].+\.tgz$/)
 })
 
 test('blocks missing archive before installing anything', async t => {
@@ -100,6 +100,46 @@ test('blocks missing archive before installing anything', async t => {
       localDshVersion: '0.2.2-rc.3',
     }),
     /archive/i,
+  )
+  assert.equal(f.calls.some(c => c[0] === 'add'), false)
+})
+
+test('rejects an unresolved plugin conflict before installing', async t => {
+  const f = await fixture()
+  t.after(() => fs.rm(f.root, { recursive: true, force: true }))
+  await assert.rejects(
+    applySnapshot({
+      snapshot: { ...f.snapshot, plugins: [{ name: 'new', version: '3.0.0', source: 'registry' }] },
+      snapshotDir: f.deviceDir,
+      inventory: { ...(await readProfile({ profileDir: f.profileDir })), dependencies: { new: '2.0.0' } },
+      packageManager: f.manager,
+      skillsDir: f.skillsDir,
+      backupDir: path.join(f.root, 'backup'),
+      archivesDir: path.join(f.root, 'archives'),
+      localDshVersion: '0.2.2-rc.3',
+      base: { plugins: { new: '1.0.0' }, skills: {} },
+    }),
+    /conflict/i,
+  )
+  assert.equal(f.calls.some(c => c[0] === 'add'), false)
+})
+
+test('rejects a skill whose content does not match its declared hash', async t => {
+  const f = await fixture()
+  t.after(() => fs.rm(f.root, { recursive: true, force: true }))
+  f.snapshot.skills = [{ ...f.snapshot.skills[0], sha256: '0'.repeat(64) }]
+  await assert.rejects(
+    applySnapshot({
+      snapshot: f.snapshot,
+      snapshotDir: f.deviceDir,
+      inventory: await readProfile({ profileDir: f.profileDir }),
+      packageManager: f.manager,
+      skillsDir: f.skillsDir,
+      backupDir: path.join(f.root, 'backup'),
+      archivesDir: path.join(f.root, 'archives'),
+      localDshVersion: '0.2.2-rc.3',
+    }),
+    /checksum/i,
   )
   assert.equal(f.calls.some(c => c[0] === 'add'), false)
 })

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -18,7 +19,7 @@ test('builds and writes a snapshot with local archives and skills', async t => {
       dependencies: { 'dsh-better-sidebar': '0.31.1', 'local-plugin': 'link:C:/local' },
       bundles: ['@deepseek-ai/dsh-base', 'dsh-better-sidebar', 'local-plugin'],
     },
-    skills: [{ name: 'skill.md', sha256: 'a'.repeat(64), bytes: 6 }],
+    skills: [{ name: 'skill.md', sha256: createHash('sha256').update('skill\n').digest('hex'), bytes: 6 }],
     state,
     dshVersion: '0.2.2-rc.3',
     platform: 'win32',

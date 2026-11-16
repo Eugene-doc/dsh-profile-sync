@@ -86,6 +86,19 @@ window.__ModuleLoader__.load({
         }
       }
 
+      async function restartNow() {
+        if (!window.confirm('Перезапустить DSH сейчас?')) return
+        setBusy(true)
+        try {
+          await api('/restart', { method: 'POST', body: '{}' })
+          setMessage('DSH перезапускается…')
+        } catch (error) {
+          setMessage(error.message)
+        } finally {
+          setBusy(false)
+        }
+      }
+
       async function applyNow() {
         if (!selected) return
         if (!window.confirm('Применить выбранный снимок? Перед изменением будет создан backup.')) return
@@ -138,7 +151,10 @@ window.__ModuleLoader__.load({
           ),
           h('button', { style: button, disabled: busy, onClick: syncNow }, busy ? 'Работаю…' : 'Синхронизировать'),
         ),
-        message ? h('div', { style: { ...card, color: message.includes('Backup') ? '#0b7a3b' : '#b45309' } }, message) : null,
+        message ? h('div', { style: { ...card, color: message.includes('Backup') ? '#0b7a3b' : '#b45309' } },
+          h('span', null, message),
+          message.includes('Backup') ? h('button', { style: { ...button, marginLeft: '12px' }, disabled: busy, onClick: restartNow }, 'Перезапустить DSH') : null,
+        ) : null,
         status ? h('div', { style: card },
           h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' } },
             h('div', null, h('div', { style: { fontSize: '12px', opacity: 0.7 } }, 'Устройство'), h('strong', null, status.device?.deviceName || '—')),

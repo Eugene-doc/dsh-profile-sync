@@ -1,4 +1,5 @@
 import { ProfileSyncEngine } from './lib/engine.js'
+import { scheduleRestart } from './lib/restart.js'
 
 export const name = 'dsh-profile-sync'
 export const inject = ['webServer']
@@ -26,7 +27,7 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'))
 }
 
-export function createHandler(engine) {
+export function createHandler(engine, { restart = scheduleRestart } = {}) {
   return async function handler(req, res) {
     const url = new URL(req.url, 'http://localhost')
     const route = url.pathname.slice(API_PREFIX.length) || '/'
@@ -50,6 +51,15 @@ export function createHandler(engine) {
           return
         }
         json(res, 200, { ok: true, diff: await engine.diff(device) })
+        return
+      }
+      if (req.method === 'POST' && route === '/restart') {
+        const mode = await restart()
+        if (!mode) {
+          json(res, 501, { ok: false, error: 'Could not start the Windows restart helper. Close DSH manually and reopen it.' })
+          return
+        }
+        json(res, 200, { ok: true, restarting: true, mode })
         return
       }
       if (req.method === 'POST' && route === '/apply') {

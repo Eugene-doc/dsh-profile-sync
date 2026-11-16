@@ -31,7 +31,7 @@ test('normalizes CRLF when hashing and reading a skill', async t => {
   await fs.mkdir(skillsDir)
   await fs.writeFile(path.join(skillsDir, 'win.md'), 'a\r\nb\r\n', 'utf8')
   const [skill] = await readSkills({ skillsDir, includeContent: true })
-  assert.equal(skill.sha256, sha('a\nb\n'))
+  assert.equal(skill.contentHash, sha('a\nb\n'))
   assert.equal(skill.content, 'a\nb\n')
 })
 

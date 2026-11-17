@@ -54,6 +54,19 @@ test('adds a remote skill and backs up an overwritten local skill', async t => {
   assert.equal(await fs.readFile(path.join(root, 'backup', 'skills', 'local.md'), 'utf8'), 'local\n')
 })
 
+test('accepts a nested state base object', async t => {
+  const { root, skillsDir } = await fixture()
+  t.after(() => fs.rm(root, { recursive: true, force: true }))
+  const result = await applySkills({
+    skillsDir,
+    remoteSkills: [{ name: 'local.md', sha256: sha('remote\n'), contentHash: sha('remote\n'), bytes: 7, content: 'remote\n' }],
+    base: { plugins: {}, skills: { 'local.md': sha('local\n') } },
+    backupDir: path.join(root, 'backup'),
+  })
+  assert.equal(result.updated, 1)
+  assert.equal(result.conflicts.length, 0)
+})
+
 test('keeps both sides when both changed from base', async t => {
   const { root, skillsDir } = await fixture()
   t.after(() => fs.rm(root, { recursive: true, force: true }))
